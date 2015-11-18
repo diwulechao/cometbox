@@ -39,25 +39,21 @@ namespace cometbox.HTTP
             Client dc = (Client)ar.AsyncState;
             int bytes = 0;
 
-            //try {
+            if (dc.stream == null) return;
             bytes = dc.stream.EndRead(ar);
-            if (bytes <= 0) {
+            if (bytes <= 0)
+            {
                 dc.CleanUp();
                 return;
             }
 
             dc.buffer += Encoding.ASCII.GetString(dc.read_buffer, 0, bytes);
-
-            //Console.WriteLine(dc.buffer);
-
             dc.ParseInput();
 
-            if (dc.stream != null) {
+            if (dc.stream != null)
+            {
                 dc.stream.BeginRead(dc.read_buffer, 0, 1024, new AsyncCallback(Client.callbackRead), dc);
             }
-            //} catch (Exception e) {
-            //	Console.WriteLine("Client: Error in callbackRead() - {0}", e.Message);
-            //}
         }
 
         private enum ParseState
@@ -130,13 +126,44 @@ namespace cometbox.HTTP
             if (state == ParseState.Done) {
                 state = ParseState.Start;
 
-                HTTP.Response response;
-                if (request.VerifyAuth(authconfig)) {
-                    response = server.HandleRequest(request);
-                } else {
-                    response = Response.Get401Response(authconfig);
+                try
+                {
+                    string[] array = request.Body.Split('|');
+                    string id = array[0];
+                    string toId = array[1];
+                    string command = array[2];
+
+                    if (toId.Equals("no"))
+                    {
+                        // this is a query then register
+                        SIServer.dic[id] = this;
+                    }
+                    else
+                    {
+                        // this is a send
+                        bool send = false;
+                        if (SIServer.dic.ContainsKey(toId))
+                        {
+                            Client client = SIServer.dic[toId];
+                            if (client.IsLive)
+                            {
+                                Response.GetHtmlResponse(id + '|' + command).SendResponse(client.stream, client);
+                                client.CleanUp();
+                                SIServer.dic.Remove(toId);
+                                Response.GetHtmlResponse("sent").SendResponse(stream, this);
+                                send = true;
+                            }
+                        }
+
+                        if (!send)
+                        {
+                            Response.GetHtmlResponse("fail").SendResponse(stream, this);
+                        }
+
+                        CleanUp();
+                    }
                 }
-                response.SendResponse(stream, this);
+                catch (Exception e) { }
 
                 request = null;
             }

@@ -25,44 +25,46 @@ namespace cometbox.HTTP
 
         public bool VerifyAuth(Config.AuthConfig auth)
         {
-            if (auth.Type == Config.AuthType.Basic)
-            {
-                string[] pair;
-                if (Headers.ContainsKey("Authorization"))
-                {
-                    pair = Headers["Authorization"].Split(' ');
-                    if (pair.Length == 2)
-                    {
-                        string temp = Util.DecodeBase64(pair[1]);
-                        if (pair[0] == "Basic" && Util.DecodeBase64(pair[1])  == auth.Username + ":" + auth.Password)
-                        {
-                            return true;
-                        }
-                        else
-                        {
-                            return false;
-                        }
-                    }
-                    else
-                    {
-                        return false;
-                    }
+            //if (auth.Type == Config.AuthType.Basic)
+            //{
+            //    string[] pair;
+            //    if (Headers.ContainsKey("Authorization"))
+            //    {
+            //        pair = Headers["Authorization"].Split(' ');
+            //        if (pair.Length == 2)
+            //        {
+            //            string temp = Util.DecodeBase64(pair[1]);
+            //            if (pair[0] == "Basic" && Util.DecodeBase64(pair[1]) == auth.Username + ":" + auth.Password)
+            //            {
+            //                return true;
+            //            }
+            //            else
+            //            {
+            //                return false;
+            //            }
+            //        }
+            //        else
+            //        {
+            //            return false;
+            //        }
 
-                }
-                else
-                {
-                    return false;
-                }
-            }
-            else if (auth.Type == Config.AuthType.Digest)
-            {
-                //TODO: Handle digest authenticaion
-                return false;
-            }
-            else
-            {
-                return true;
-            }
+            //    }
+            //    else
+            //    {
+            //        return false;
+            //    }
+            //}
+            //else if (auth.Type == Config.AuthType.Digest)
+            //{
+            //    //TODO: Handle digest authenticaion
+            //    return false;
+            //}
+            //else
+            //{
+            //    return true;
+            //}
+
+            return true;
         }
     }
 }

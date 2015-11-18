@@ -1,11 +1,5 @@
 using System;
-using System.Threading;
-using System.Text;
-using System.Net;
-using System.Net.Sockets;
 using System.IO;
-using System.Xml;
-using System.Xml.Serialization;
 
 namespace cometbox
 {
@@ -48,9 +42,7 @@ namespace cometbox
                 return;
             }
 
-            WIServer wiserver = new WIServer(Configuration.WebInterface);
             SIServer siserver = new SIServer(Configuration.ServerInterface);
-
         }
 
         static void GracefullyChokeAndDie()

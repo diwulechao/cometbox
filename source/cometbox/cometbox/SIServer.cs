@@ -8,12 +8,14 @@ using System.Collections.Generic;
 using System.IO;
 using System.Xml;
 using System.Xml.Serialization;
+using cometbox.HTTP;
 
 namespace cometbox
 {
     public class SIServer : HTTP.Server
     {
         Config.ServerInterfaceConfig config;
+        public static Dictionary<string, Client> dic = new Dictionary<string, Client>();
 
         public SIServer(Config.ServerInterfaceConfig c)
             : base(Dns.GetHostEntry(IPAddress.Parse(c.BindTo)).AddressList[0], c.Port, c.Authentication)
@@ -23,26 +25,7 @@ namespace cometbox
 
         public override HTTP.Response HandleRequest(cometbox.HTTP.Request request)
         {
-            Console.WriteLine("SIServer HandleRequest(). " + request.Url);
-
-            Console.WriteLine("---");
-            Console.WriteLine("\""+request.Body+"\"");
-            Console.WriteLine("---");
-
-            try {
-                XmlSerializer s = new XmlSerializer(typeof(SIRequest));
-
-                MemoryStream mem = new MemoryStream();
-                mem.Write(System.Text.Encoding.ASCII.GetBytes(request.Body), 0, request.Body.Length);
-                mem.Seek(0, 0);
-
-                SIRequest data = (SIRequest)s.Deserialize(mem);
-
-                return HTTP.Response.GetHtmlResponse("GOOD!");
-            } catch (Exception e) {
-                Console.WriteLine("Error parsing xml: " + e.Message);
-                return HTTP.Response.GetHtmlResponse("Error parsing xml: " + e.Message);
-            }
+            return HTTP.Response.GetHtmlResponse("GOOD!");
         }
 
         [XmlRoot("Request")]

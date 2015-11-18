@@ -13,6 +13,7 @@ namespace cometbox.HTTP
         private Thread thread = null;
 		private TcpListener listener = null;
         private Config.AuthConfig authconfig;
+        public List<Client> clients;
 
 		public Server(IPAddress ip, Int32 port, Config.AuthConfig a)
 		{
@@ -29,14 +30,13 @@ namespace cometbox.HTTP
 				
 		private void Loop()
 		{
-			List<Client> clients = new List<Client>();
+			clients = new List<Client>();
 	
 			while ( true ) {
 				TcpClient client = listener.AcceptTcpClient();
 
 				Client dc = new Client(client, this, authconfig);
-				clients.Add(dc);
-				
+			
 				int i = 0;
 				while (i < clients.Count) {
 					if ( !clients[i].IsLive ) {
