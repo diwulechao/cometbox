@@ -43,8 +43,6 @@ namespace cometbox.HTTP
             }
             r.Append("\r\n");
 
-            Console.WriteLine(r.ToString());
-
             byte[] htext = Encoding.ASCII.GetBytes(r.ToString());
             stream.Write(htext, 0, htext.Length);
 

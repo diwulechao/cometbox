@@ -30,7 +30,6 @@ namespace cometbox.HTTP
             authconfig = a;
 
             stream = client.GetStream();
-
             stream.BeginRead(read_buffer, 0, 1024, new AsyncCallback(callbackRead), this);
         }
 
@@ -39,7 +38,7 @@ namespace cometbox.HTTP
             Client dc = (Client)ar.AsyncState;
             int bytes = 0;
 
-            if (dc.stream == null) return;
+            if (!dc.IsLive) return;
             bytes = dc.stream.EndRead(ar);
             if (bytes <= 0)
             {
@@ -52,7 +51,13 @@ namespace cometbox.HTTP
 
             if (dc.stream != null)
             {
-                dc.stream.BeginRead(dc.read_buffer, 0, 1024, new AsyncCallback(Client.callbackRead), dc);
+                try
+                {
+                    dc.stream.BeginRead(dc.read_buffer, 0, 1024, new AsyncCallback(Client.callbackRead), dc);
+                }
+                catch (Exception e)
+                {
+                }
             }
         }
 
@@ -69,15 +74,19 @@ namespace cometbox.HTTP
             int pos;
             string temp;
             bool skip = false;
-            while (bufferpos < buffer.Length - 1 && state != ParseState.Done && !skip) {
-                switch (state) {
+            while (bufferpos < buffer.Length - 1 && state != ParseState.Done && !skip)
+            {
+                switch (state)
+                {
                     case ParseState.Start:
-                        if ((pos = buffer.IndexOf("\r\n", bufferpos)) >= 0) {
+                        if ((pos = buffer.IndexOf("\r\n", bufferpos)) >= 0)
+                        {
                             temp = buffer.Substring(bufferpos, pos - bufferpos);
                             bufferpos = pos + 2;
 
                             string[] parts = temp.Split(' ');
-                            if (parts.Length == 3) {
+                            if (parts.Length == 3)
+                            {
                                 request = new HTTP.Request();
 
                                 request.Method = parts[0];
@@ -85,85 +94,114 @@ namespace cometbox.HTTP
                                 request.Version = parts[2];
 
                                 state = ParseState.Headers;
-                            } else {
+                            }
+                            else
+                            {
                                 CleanUp();
                             }
                         }
                         break;
                     case ParseState.Headers:
-                        if ((pos = buffer.IndexOf("\r\n", bufferpos)) >= 0) {
+                        if ((pos = buffer.IndexOf("\r\n", bufferpos)) >= 0)
+                        {
                             temp = buffer.Substring(bufferpos, pos - bufferpos);
                             bufferpos = pos + 2;
 
-                            if (temp.Length > 0) {
+                            if (temp.Length > 0)
+                            {
                                 string[] parts = temp.Split(new string[1] { ": " }, StringSplitOptions.RemoveEmptyEntries);
-                                if (parts.Length == 2) {
+                                if (parts.Length == 2)
+                                {
                                     request.Headers.Add(parts[0], parts[1]);
                                 }
-                            } else {
-                                if (request.HasContent()) {
+                            }
+                            else
+                            {
+                                if (request.HasContent())
+                                {
                                     state = ParseState.Content;
-                                } else {
+                                }
+                                else
+                                {
                                     state = ParseState.Done;
                                 }
                             }
                         }
                         break;
                     case ParseState.Content:
-                        if (bufferpos + request.ContentLength <= buffer.Length) {
+                        if (bufferpos + request.ContentLength <= buffer.Length)
+                        {
                             int t = bufferpos + request.ContentLength - 1;
                             request.Body = buffer.Substring(bufferpos, request.ContentLength);
                             bufferpos += request.ContentLength;
 
                             state = ParseState.Done;
-                        } else {
+                        }
+                        else
+                        {
                             skip = true;
                         }
                         break;
                 }
             }
 
-            if (state == ParseState.Done) {
+            if (state == ParseState.Done)
+            {
                 state = ParseState.Start;
 
+                string toId = null, id = null, command = null;
                 try
                 {
                     string[] array = request.Body.Split('|');
-                    string id = array[0];
-                    string toId = array[1];
-                    string command = array[2];
-
-                    if (toId.Equals("no"))
-                    {
-                        // this is a query then register
-                        SIServer.dic[id] = this;
-                    }
-                    else
-                    {
-                        // this is a send
-                        bool send = false;
-                        if (SIServer.dic.ContainsKey(toId))
-                        {
-                            Client client = SIServer.dic[toId];
-                            if (client.IsLive)
-                            {
-                                Response.GetHtmlResponse(id + '|' + command).SendResponse(client.stream, client);
-                                client.CleanUp();
-                                SIServer.dic.Remove(toId);
-                                Response.GetHtmlResponse("sent").SendResponse(stream, this);
-                                send = true;
-                            }
-                        }
-
-                        if (!send)
-                        {
-                            Response.GetHtmlResponse("fail").SendResponse(stream, this);
-                        }
-
-                        CleanUp();
-                    }
+                    id = array[0];
+                    toId = array[1];
+                    command = array[2];
                 }
-                catch (Exception e) { }
+                catch (Exception e)
+                {
+                    CleanUp();
+                    request = null;
+                    return;
+                }
+                
+
+                if (toId.Equals("no"))
+                {
+                    // this is a query then register
+                    if (SIServer.dic.ContainsKey(id))
+                    {
+                        Client client = SIServer.dic[id];
+                        if (client.IsLive) client.CleanUp();
+                    }
+
+                    SIServer.dic[id] = this;
+                }
+                else
+                {
+                    // this is a send
+                    bool send = false;
+                    if (SIServer.dic.ContainsKey(toId))
+                    {
+                        Client client = SIServer.dic[toId];
+                        if (client.IsLive)
+                        {
+                            Response.GetHtmlResponse(id + '|' + command).SendResponse(client.stream, client);
+                            client.CleanUp();
+
+                            SIServer.dic.TryRemove(toId, out client);
+
+                            Response.GetHtmlResponse("sent").SendResponse(stream, this);
+                            send = true;
+                        }
+                    }
+
+                    if (!send)
+                    {
+                        Response.GetHtmlResponse("fail").SendResponse(stream, this);
+                    }
+
+                    CleanUp();
+                }
 
                 request = null;
             }
@@ -174,8 +212,9 @@ namespace cometbox.HTTP
             byte[] bytes = Encoding.ASCII.GetBytes(data);
             int offset = 0;
             int len = 0;
-            Console.WriteLine("Sending: " + bytes.Length);
-            while (offset < bytes.Length) {
+            // Console.WriteLine("Sending: " + bytes.Length);
+            while (offset < bytes.Length)
+            {
                 offset = Math.Min(offset, bytes.Length - 1);
                 len = Math.Min(1024, bytes.Length - offset);
 
@@ -183,30 +222,31 @@ namespace cometbox.HTTP
 
                 offset += 1024;
             }
-            Console.WriteLine("Done.");
+            // Console.WriteLine("Done.");
         }
 
         public void CleanUp()
         {
-            try {
+            IsLive = false;
+
+            try
+            {
                 stream.Close();
             }
             catch { }
-            try {
+            try
+            {
                 stream.Dispose();
             }
             catch { }
-            try {
+            try
+            {
                 client.Close();
             }
             catch { }
 
             stream = null;
             client = null;
-
-            IsLive = false;
         }
     }
 }
-
-

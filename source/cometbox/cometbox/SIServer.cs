@@ -9,13 +9,14 @@ using System.IO;
 using System.Xml;
 using System.Xml.Serialization;
 using cometbox.HTTP;
+using System.Collections.Concurrent;
 
 namespace cometbox
 {
     public class SIServer : HTTP.Server
     {
         Config.ServerInterfaceConfig config;
-        public static Dictionary<string, Client> dic = new Dictionary<string, Client>();
+        public static ConcurrentDictionary<string, Client> dic = new ConcurrentDictionary< string, Client>();
 
         public SIServer(Config.ServerInterfaceConfig c)
             : base(Dns.GetHostEntry(IPAddress.Parse(c.BindTo)).AddressList[0], c.Port, c.Authentication)
