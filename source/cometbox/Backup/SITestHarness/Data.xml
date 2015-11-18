@@ -1,0 +1,8 @@
+﻿<?xml version="1.0"?>
+<Request>
+  <Command>Queue</Command>
+  <User>user1</User>
+  <Message>Message 1</Message>
+  <Message>Message 2</Message>
+  <Message>Message 3</Message>
+</Request>

@@ -1,0 +1,5 @@
+C:\repos\cometbox\source\cometbox\cometbox\obj\Debug\cometbox.exe
+C:\repos\cometbox\source\cometbox\cometbox\obj\Debug\cometbox.pdb
+C:\repos\cometbox\source\cometbox\cometbox\bin\Debug\cometbox.exe
+C:\repos\cometbox\source\cometbox\cometbox\bin\Debug\cometbox.pdb
+C:\repos\cometbox\source\cometbox\cometbox\obj\Debug\cometbox.csprojResolveAssemblyReference.cache
